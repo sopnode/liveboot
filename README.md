@@ -1,9 +1,3 @@
-# todo
-
-* in `/srv/shares/bootable-images/`, name the fedora outputs as `liveboot`
-* in `/srv/shares/bootable-images/`, name the fedora outputs after releasever
-
-
 # booting vanilla OSes live using redfish
 
 goal is for a user to be able to boot a sopnode with a live session of an OS of

@@ -22,15 +22,17 @@ LONG_DESCRIPTION = \
 # which is required before pip can install asyncssh
 INSTALL_REQUIRES = [
     'redfish',
+    # read the config
+    'PyYAML',
+    # extract stuff in a data tree
     'jmespath',
+    # template rendering
     'jinja2',
-    # used in the shell scripts
+    # used in the cloud-init shell script
     'jinja2-cli[yaml]',
+    # check the existence of a URL
+    'requests',
 ]
-
-# add convenience entry points like sopnode-load and others
-console_scripts = []
-console_scripts.append('sopnode = liveboot.cli:main')
 
 setuptools.setup(
     name="sopnode",
@@ -52,7 +54,9 @@ setuptools.setup(
         'ubuntu/patch-ubuntu-image.sh',
     ],
     package_data={
-        # xxx
+        'cloud-init': [
+            'cloud-init-template.yaml.j2',
+        ],
     },
 
     install_requires=INSTALL_REQUIRES,
