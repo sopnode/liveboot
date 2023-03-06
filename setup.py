@@ -35,7 +35,7 @@ INSTALL_REQUIRES = [
 ]
 
 setuptools.setup(
-    name="sopnode",
+    name="liveboot",
     author="Thierry Parmentelat",
     author_email="thierry.parmentelat@inria.fr",
     description="Testbed Management Framework for Sophia Node",
@@ -47,7 +47,7 @@ setuptools.setup(
     version=__version__,
     python_requires=">=3.10",
 
-    entry_points={ 'console_scripts': ['sopnode = liveboot.cli:main'] },
+    entry_points={ 'console_scripts': ['liveboot = liveboot.cli:main'] },
     scripts=[
         'cloud-init/seed-cloud-init.sh',
         'fedora/build-fedora-liveboot.sh',

@@ -20,7 +20,7 @@ import requests
 import yaml
 
 from .idrac import Idrac
-from .version import __version__ as sopnode_version
+from .version import __version__ as liveboot_version
 
 
 CONFIG_FILENAME = "/etc/sopnode/sopnodes.yaml"
@@ -257,7 +257,7 @@ def wait_add_arguments(parser):
 
 @subcommand
 def version(config, args):
-    print(f"sopnode v{sopnode_version}")
+    print(f"sopnode v{liveboot_version}")
 
 
 
