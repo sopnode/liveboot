@@ -1,0 +1,36 @@
+#cloud-config
+
+### packages : WARNING: better to update later on, once ssh is up
+#package_update: true
+
+packages:
+  # git and rsync are already included in ubuntu-22, but for the record
+  - git
+  - rsync
+  # this is actually doing something on ubuntu-22
+  - ansible
+  - openssh-server
+
+users:
+- default:
+  # disable default user
+  inactive: "0"
+
+- name: root
+# on u18, we're getting 'User root not allowed because account is locked'
+# but this would not solve the issue..
+# hence our call to usermod below
+#  lock_password: false
+  ssh_authorized_keys:
+  {% for key in authorized_keys %} - {{ key }}
+  {% endfor %}
+# turn off ssh password authentication
+ssh_pwauth: false
+
+# enable (unlock) root
+# https://unix.stackexchange.com/questions/193066/how-to-unlock-account-for-public-key-ssh-authorization-but-not-for-password-aut
+runcmd:
+  - [ usermod, -p, '*', root ]
+
+hostname: sopnode-{{stem}}-live
+fqdn: sopnode-{{stem}}-live.inria.fr
