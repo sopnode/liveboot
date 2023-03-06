@@ -20,6 +20,7 @@ import requests
 import yaml
 
 from .idrac import Idrac
+from .version import __version__ as sopnode_version
 
 
 CONFIG_FILENAME = "/etc/sopnode/sopnodes.yaml"
@@ -215,7 +216,17 @@ def on(config, args):
         return 0 if idrac.on() else 1
 
 def on_add_arguments(parser):
-    # xxx do we need to change the 3 durations on the command line ?
+    parser.add_argument("stem")
+
+@subcommand
+def reboot(config, args):
+    with make_idrac(config, args.stem) as idrac:
+        if not idrac.off():
+            logging.error("cannot turn off")
+            return 1
+        return 0 if idrac.on() else 1
+
+def reboot_add_arguments(parser):
     parser.add_argument("stem")
 
 
@@ -242,12 +253,21 @@ def wait_add_arguments(parser):
     parser.add_argument("stem")
 
 
+
+
+@subcommand
+def version(config, args):
+    print(f"sopnode v{sopnode_version}")
+
+
+
 def main() -> int:
 
     parser = ArgumentParser()
     parser.add_argument("--config", default=CONFIG_FILENAME,
                         help="use another config file")
     subparsers = parser.add_subparsers(help="subcommand help")
+    # add all the subcommands subparsers
     for subcommand in SUBCOMMANDS:
         subparser = subparsers.add_parser(subcommand)
         subparser.set_defaults(func=locate_subcommand(subcommand))
@@ -267,7 +287,11 @@ def main() -> int:
         print(f"could not load config file {args.config}, {exc}")
         sys.exit(1)
 
-    if getattr(args, 'stem') and args.stem not in known_stems:
+    if not getattr(args, 'func', None):
+        parser.print_help()
+        return 1
+
+    if getattr(args, 'stem', None) and args.stem not in known_stems:
         print(f"stem should be among one of {' '.join(known_stems)}")
         sys.exit(1)
 
