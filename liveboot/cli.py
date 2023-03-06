@@ -257,7 +257,7 @@ def wait_add_arguments(parser):
 
 @subcommand
 def version(config, args):
-    print(f"sopnode v{liveboot_version}")
+    print(f"liveboot v{liveboot_version}")
 
 
 
