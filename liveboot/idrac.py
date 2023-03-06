@@ -87,7 +87,7 @@ class Idrac:
             return jmespath.search(xpath, data)
 
 
-    # and the setter - using POST
+    # and the setter - using POST (or PATCH it patch is set)
     def _post(self, uri, payload,
             #*,  somehow adding this creates a lot of trouble...
             ok_codes=(204,),
@@ -189,9 +189,9 @@ class Idrac:
     @staticmethod
     def virtual_media_status(media) -> dict:
         """
-        given a raw media dict as retrned by get_virtual_medias
+        given a raw media dict as returned by get_virtual_medias
         we return a single dictionary like e.g.
-        { 'Vmedia slot 1': 'not connected'}
+        { 'Vmedia slot 1': None}
         or
         { 'Vmedia slot 2: 'http://blabla'}
         """
@@ -199,7 +199,7 @@ class Idrac:
         name = f"Vmedia slot {media_id}"
         match media['ConnectedVia']:
             case 'NotConnected':
-                return {name: 'not connected'}
+                return {name: None}
             case 'URI':
                 return {name: media['Image']}
             case _:
@@ -214,7 +214,7 @@ class Idrac:
         for media in medias:
             # only one key, but that's still the simplest way...
             for k, v in self.virtual_media_status(media).items():
-                print(f"{k}: {v}")
+                print(f"{k}: {v or 'not connected'}")
 
     def _insert_virtual_media(self, device, uri) -> OptResponse:
         if device not in (1, 2):
@@ -286,6 +286,16 @@ class Idrac:
         # we need to wait for it to complete
         #task_uri = pass1['headers']['Location']
 
+
+
+    def on(self) -> bool:
+        """
+        turn on the box
+        """
+        if not self.set_power_state('On'):
+            logging.error( f"{self}: cannot turn ON")
+            return False
+        return True
 
 
     def off(self, wait_for_off=300, wait_for_forceoff=15, check_cycle=3) -> bool:
@@ -366,7 +376,7 @@ class Idrac:
         )
         return {
             k: v for k, v in all_attributes.items()
-            if not pattern or re.match(pattern, k)
+            if not pattern or re.search(pattern, k, flags=re.I)
         }
 
     def show_bios_attributes(self, pattern=None):
@@ -381,7 +391,7 @@ class Idrac:
         else:
             print()
         data = self.get_bios_attributes(pattern)
-        margin = max(map(len, data.keys()))
+        margin = max(map(len, data.keys()), default=0)
         for k, v in data.items():
             print(f"{k:>{margin}}: {v}")
 
@@ -399,27 +409,39 @@ class Idrac:
             "Bios/BiosRegistry",
             xpath="RegistryEntries.Attributes"
         )
+        logging.info("BIOS registry retrieved (for type conversion and values checking)")
         def find_in_registry(setting):
             for D in registry:
-                if D['AttributeName'] == setting:
+                if D['AttributeName'].lower() == setting.lower():
                     return D
+        def find_in_enumeration(value, enumeration):
+            for item in enumeration:
+                if value.lower() == item.lower():
+                    return item
+        # because we tolerate lowercase input, we must build
+        # a near-copy of new_values
+        new_values_checked = {}
         for setting, value in new_values.items():
             spec = find_in_registry(setting)
             if not spec:
                 logging.error(f"Unknown setting {setting} - exiting")
                 return False
             if spec['Type'] == 'Integer':
-                new_values[setting] = int(value)
+                new_value = int(value)
             elif spec['Type'] == 'Enumeration':
                 admissible = {D['ValueName'] for D in spec['Value']}
-                if value not in admissible:
+                new_value = find_in_enumeration(value, admissible)
+                if not new_value:
                     logging.error(f"Unexpected value {value} for setting {setting}")
                     logging.error(f"should be among {admissible}")
                     return False
+            else:
+                new_value = value
+            new_values_checked[spec['AttributeName']] = new_value
 
         # create a job that tells the box to apply the settings upon next reset
         payload = {"@Redfish.SettingsApplyTime": {"ApplyTime": "OnReset"}}
-        payload['Attributes'] = new_values
+        payload['Attributes'] = new_values_checked
         response = self._post(
             "Bios/Settings",
             payload=payload,
@@ -431,7 +453,8 @@ class Idrac:
             return False
         # wait for a confirmation that the config job was created allright
         task_uri = response.task_location
-        print(f"{task_uri=}")
+        task_id = task_uri.split('/')[-1]
+        logging.info(f"waiting for job {task_id} to be successfully scheduled")
         try:
             with WaitLoop() as waitloop:
                 while True:
@@ -447,3 +470,43 @@ class Idrac:
         except TimeoutError:
             logging.error("Config job not confirmed...")
             return False
+
+
+    def bios_reset(self) -> OptResponse:
+        return self._post(
+            "Bios/Actions/Bios.ResetBios",
+            payload={},
+            ok_codes=(200,),
+        )
+
+
+    def get_queue(self):
+        return self._get(
+            "Jobs?$expand=*($levels=1)",
+            prefix="Managers/iDRAC.Embedded.1/",
+            xpath="Members",
+        )
+
+    def show_queue(self, show_all=False):
+        def oneliner(job):
+            return f"complete {job['PercentComplete']:3}% {job['Name']} - {job['JobType']} ({job['Id']})"
+        # show past jobs if requested
+        if show_all:
+            print(f"{' Past jobs ':-^60}")
+            for job in self.get_queue():
+                if job['PercentComplete'] == 100:
+                    print(oneliner(job))
+        # the others
+        print(f"{' Current jobs ':-^60}")
+        for job in self.get_queue():
+            if job['PercentComplete'] != 100:
+                print(oneliner(job))
+
+    def clear_queue(self, job_id=None):
+        payload = dict(JobID = str(job_id) if job_id else "JID_CLEARALL")
+        return self._post(
+            "DellJobService/Actions/DellJobService.DeleteJobQueue",
+            payload=payload,
+            prefix="Dell/Managers/iDRAC.Embedded.1/",
+            ok_codes=(200,)
+        )

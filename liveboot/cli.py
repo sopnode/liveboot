@@ -71,6 +71,72 @@ def status_add_arguments(parser):
 
 
 @subcommand
+def biosget(config, args):
+    with make_idrac(config, args.stem) as idrac:
+        idrac.show_bios_attributes(pattern=args.pattern)
+
+def biosget_add_arguments(parser):
+    parser.add_argument("stem")
+    parser.add_argument("pattern", nargs="?")
+
+
+
+@subcommand
+def biosset(config, args):
+    if not args.settings:
+        print("no setting to implement - exiting")
+        return 1
+    new_values = {}
+    for setting in args.settings:
+        try:
+            name, value = setting.split('=')
+            new_values[name] = value
+        except ValueError:
+            print(f"incorrect setting {setting}")
+            return 1
+
+    with make_idrac(config, args.stem) as idrac:
+        idrac.set_bios_attributes(new_values)
+
+def biosset_add_arguments(parser):
+    parser.add_argument("stem")
+    parser.add_argument("settings", nargs='+',
+                        help="should be of the form setting=value")
+
+
+
+@subcommand
+def biosreset(config, args):
+    with make_idrac(config, args.stem) as idrac:
+        idrac.bios_reset()
+
+def biosreset_add_arguments(parser):
+    parser.add_argument("stem")
+
+
+
+@subcommand
+def queueget(config, args):
+    with make_idrac(config, args.stem) as idrac:
+        idrac.show_queue(args.all)
+
+def queueget_add_arguments(parser):
+    parser.add_argument("-a", "--all", default=False, action='store_true',
+                        help="by default, only incomplete jobs are shown")
+    parser.add_argument("stem")
+
+
+@subcommand
+def queueclear(config, args):
+    with make_idrac(config, args.stem) as idrac:
+        idrac.clear_queue(args.job_id)
+
+def queueclear_add_arguments(parser):
+    parser.add_argument("-j", "--job-id", default=None)
+    parser.add_argument("stem")
+
+
+@subcommand
 def diskboot(config, args):
     with make_idrac(config, args.stem) as l:
         l.eject_virtual_media(1)
@@ -117,10 +183,14 @@ def liveboot(config, args):
     url2 = f"{url_prefix}/{seed}"
 
     with make_idrac(config, args.stem) as idrac:
-        idrac.insert_virtual_media(1, url1)
-        idrac.insert_virtual_media(2, url2)
-        idrac.show_virtual_medias()
-        idrac.set_next_one_time_boot_virtual_media_device(1)
+        if not (
+            idrac.insert_virtual_media(1, url1)
+        and idrac.insert_virtual_media(2, url2)
+        # ignore result
+        and (idrac.show_virtual_medias() or True)
+        and idrac.set_next_one_time_boot_virtual_media_device(1)):
+            logging.error("liveboot emergency exit")
+            return 1
         idrac.reboot()
     return 0
 
@@ -133,47 +203,20 @@ def liveboot_add_arguments(parser):
 @subcommand
 def off(config, args):
     with make_idrac(config, args.stem) as idrac:
-        idrac.off()
+        return 0 if idrac.off() else 1
 
 def off_add_arguments(parser):
     # xxx do we need to change the 3 durations on the command line ?
     parser.add_argument("stem")
 
-
-
 @subcommand
-def bios(config, args):
+def on(config, args):
     with make_idrac(config, args.stem) as idrac:
-        idrac.show_bios_attributes(pattern=args.pattern)
+        return 0 if idrac.on() else 1
 
-def bios_add_arguments(parser):
-    parser.add_argument("-p", "--pattern", default="")
+def on_add_arguments(parser):
+    # xxx do we need to change the 3 durations on the command line ?
     parser.add_argument("stem")
-
-
-
-@subcommand
-def setbios(config, args):
-    if not args.settings:
-        print("no setting to implement - exiting")
-        return 1
-    print(f"{args.settings=}")
-    new_values = {}
-    for setting in args.settings:
-        try:
-            name, value = setting.split('=')
-            new_values[name] = value
-        except ValueError:
-            print(f"incorrect setting {setting}")
-            return 1
-
-    with make_idrac(config, args.stem) as idrac:
-        idrac.set_bios_attributes(new_values)
-
-def setbios_add_arguments(parser):
-    parser.add_argument("stem")
-    parser.add_argument("settings", nargs='+',
-                        help="should be of the form setting=value")
 
 
 
