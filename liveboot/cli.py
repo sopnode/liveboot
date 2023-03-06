@@ -167,9 +167,9 @@ def liveboot(config, args):
         return 1
 
     stem = args.stem
-    packaged_data = resources.files('cloud-init')
+    packaged_data = resources.files('liveboot')
     # generate the cloud-init seed
-    template = packaged_data / "cloud-init-template.yaml.j2"
+    template = packaged_data / "templates/cloud-init-template.yaml.j2"
     # xxx these should come from the slice
     # they are hard-wired for now
     keysfile = "/etc/sopnode/sopnode-keys.yaml"

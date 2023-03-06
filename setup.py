@@ -54,8 +54,8 @@ setuptools.setup(
         'ubuntu/patch-ubuntu-image.sh',
     ],
     package_data={
-        'cloud-init': [
-            'cloud-init-template.yaml.j2',
+        'liveboot': [
+            'templates/cloud-init-template.yaml.j2',
         ],
     },
 
