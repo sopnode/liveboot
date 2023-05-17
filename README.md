@@ -198,7 +198,7 @@ we patch the standard ubuntu image, e.g.
 using our home-brewed tool like so
 
 ```shell
-./patch-ubuntu-image.sh /srv/shares/bootable-images/ubuntu-22.04.2-live-server-amd64.iso
+./patch-ubuntu-image.sh /srv/shares/bootable-images/public/ubuntu-22.04.2-live-server-amd64.iso
 ```
 
 #### of interest for troubleshooting

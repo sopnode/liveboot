@@ -5,6 +5,8 @@
 # xxx possible improvement: all this is likely doable with livefs-editor
 # git@github.com:mwhudson/livefs-editor.git
 
+DEFAULT_OUTPUT_DIR="/srv/shares/bootable-images/"
+
 function patch-ubuntu() {
     local original="$1"; shift
     local patched="$1"; shift
@@ -61,19 +63,46 @@ function patch-ubuntu() {
 
 }
 
-USAGE="Usage: $COMMAND original-ubuntu.iso"
+
+function usage() {
+    echo "Usage: $COMMAND [-o output-image] [-d output-dir] original-ubuntu.iso"
+    exit 1
+}
 
 function main() {
 
-    [[ "$#" == 1 ]] || { echo $USAGE; exit 1; }
+    local output_image=""
+    local output_dir=""
+    while getopts "o:d:h" opt; do
+        case $opt in
+            o) output_image=$OPTARG ;;
+            d) output_dir=$OPTARG ;;
+            h) echo $USAGE; exit 0 ;;
+            \?)
+                echo "Invalid option: -$OPTARG" >&2 ; usage ;;
+            :)
+                echo "Option -$OPTARG requires an argument." >&2 ; usage ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    [[ "$#" == 1 ]] || usage
 
     local original="$1"
-    local dir=$(dirname $original)
-    dir=$(cd $dir/..; pwd)
-    local stem=$(basename $original .iso)
-    [[ $stem == $original ]] && { echo $original should be a .iso; exit 1; }
-    patched=$dir/${stem}-liveboot.iso
-    echo $original $patched
+    local basename=$(basename $original)
+    local distro=$(cut -d- -f1 <<< $basename)
+    local version=$(cut -d- -f2 <<< $basename)
+
+    [[ $distro == ubuntu ]] || { echo $original should be an ubuntu .iso; exit 1; }
+
+    [[ -z "$output_image" ]] && output_image="$distro-$version-liveboot.iso"
+    [[ -z "$output_dir" ]] && output_dir=$DEFAULT_OUTPUT_DIR
+
+    [[ -f "$original" ]] || { echo $original should be a file; exit 1; }
+    [[ -d "$output_dir" ]] || { echo $output_dir should be a directory; exit 1; }
+
+    local patched=$output_dir/$output_image
+
     patch-ubuntu $original $patched
 }
 
