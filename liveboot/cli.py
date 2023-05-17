@@ -14,6 +14,7 @@ import os
 import time
 import logging
 from argparse import ArgumentParser
+from pathlib import Path
 from importlib import resources
 
 import requests
@@ -157,6 +158,9 @@ def liveboot(config, args):
     port = images_config.get('port', 80)
     path = images_config.get('path')
     image = args.image
+    # normalize path - allows to pass a path using bash completion
+    image_path = Path(image)
+    image = f"{image_path.stem}.iso"
     url_prefix = f"{proto}://{ip}:{port}/{path}"
     url1 = f"{url_prefix}/{image}"
 
