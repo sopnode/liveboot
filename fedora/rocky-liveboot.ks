@@ -284,15 +284,15 @@ if strstr "\`cat /proc/cmdline\`" textinst ; then
    /usr/sbin/liveinst --text \$ks
 fi
 
-# Configure X, allowing user to override xdriver
-if [ -n "\$xdriver" ]; then
-   cat > /etc/X11/xorg.conf.d/00-xdriver.conf <<FOE
-Section "Device"
-	Identifier	"Videocard0"
-	Driver	"\$xdriver"
-EndSection
-FOE
-fi
+# # Configure X, allowing user to override xdriver
+# if [ -n "\$xdriver" ]; then
+#    cat > /etc/X11/xorg.conf.d/00-xdriver.conf <<FOE
+# Section "Device"
+# 	Identifier	"Videocard0"
+# 	Driver	"\$xdriver"
+# EndSection
+# FOE
+# fi
 
 EOF
 
