@@ -50,7 +50,7 @@ setuptools.setup(
     entry_points={ 'console_scripts': ['liveboot = liveboot.cli:main'] },
     scripts=[
         'cloud-init/seed-cloud-init.sh',
-        'fedora/build-fedora-liveboot.sh',
+        'fedora/build-rpm-liveboot.sh',
         'ubuntu/patch-ubuntu-image.sh',
     ],
     package_data={

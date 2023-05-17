@@ -241,7 +241,7 @@ inspired from <https://www.spinics.net/linux/fedora/fedora-users/msg516742.html>
 
 ```bash
 cd fedora
-build-fedora-liveboot.sh 37 /srv/shares/bootable-images
+build-rpm.sh f37
 ```
 
 the `-original.ks` file is kept in the repo for the record only; it is the output of
