@@ -20,7 +20,7 @@ function usage() {
 }
 
 function main() {
-    while getopts "i:d:o:h" opt; do
+    while getopts "i:o:d:h" opt; do
         case $opt in
             i) KS_FILE=$OPTARG ;;
             o) IMAGE_NAME=$OPTARG ;;
