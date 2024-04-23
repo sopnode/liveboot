@@ -72,17 +72,29 @@ function build-liveboot() {
     local imagetag="$1"; shift
     local target_dir="$1"; shift
 
-    livecd-creator \
-        --verbose \
-        --fslabel $imagetag \
-        --title=$imagetag \
-        --config=$ks_file \
-        --releasever=$releasever \
-        --cache=/var/cache/live \
+    # clean up destination area; media-creator does not like it otherwise
+    local destdir=/tmp/lb-lmc-$imagetag
+    if [[ -d $destdir ]]; then
+        echo Warning: cleaning up destination folder $destdir
+        rm -rf $destdir
+    fi
 
-    if [[ -f "$imagetag.iso" ]]; then
-        echo moving resulting ISO $imagetag.iso into $target_dir
-        mv $imagetag.iso $target_dir
+    # livemedia-creator is much more powerful than livecd-creator
+    # it comes with   dnf install lorax
+    livemedia-creator \
+        --make-iso \
+        --no-virt \
+        --ks $ks_file \
+        --releasever=$releasever \
+        --iso-only \
+        --iso-name=$imagetag.iso \
+        --resultdir=$destdir \
+        --volid $imagetag \
+
+    if [[ $? == 0 ]]; then
+        mv $destdir/$imagetag.iso $target_dir
+        rmdir $destdir
+        ls -l $target_dir/$imagetag.iso
     else
         echo FAILED to produce $imagetag.iso - exiting
         exit 1

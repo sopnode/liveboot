@@ -10,19 +10,18 @@ lang en_US.UTF-8
 network  --bootproto=dhcp --device=link --activate
 # Shutdown after installation
 shutdown
-#repo --name="rawhide" --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=rawhide&arch=$basearch
-repo --name=release --baseurl=http://fedora-serv.inria.fr/miroirs/fedora/$releasever/Everything/x86_64/os
+# do install
+# one install method is mandatory, here url
+url --url=http://fedora-serv.inria.fr/miroirs/fedora/$releasever/Everything/x86_64/os
 repo --name=updates --baseurl=http://fedora-serv.inria.fr/miroirs/fedora/updates/$releasever/Everything/x86_64
 # Root password
 rootpw --iscrypted --lock locked
 # SELinux configuration
-selinux --enforcing
+selinux --disabled
 # System services
 services --disabled="sshd" --enabled="NetworkManager"
 # System timezone
 timezone US/Eastern
-# Use network installation
-#url --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?repo=rawhide&arch=$basearch"
 # X Window System configuration information
 xconfig  --startxonboot
 # System bootloader configuration
